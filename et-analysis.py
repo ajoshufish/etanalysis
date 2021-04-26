@@ -16,6 +16,8 @@ def load_data():
 
 
 st.text('Loading data...')
+
+#get our data loaded in and into a pandas dataframe
 data = load_data()
 headers = data.pop(0)
 df = pd.DataFrame(data, columns=headers)
