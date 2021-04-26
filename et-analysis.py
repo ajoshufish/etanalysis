@@ -15,13 +15,13 @@ def load_data():
     return ws.get_all_records()
 
 
-st.text('Loading data...')
+
 
 #get our data loaded in and into a pandas dataframe
 data = load_data()
 headers = data.pop(0)
 df = pd.DataFrame(data, columns=headers)
-st.text('Loading data...done!')
+
 
 col1 = df['Time']
 col2 = df['Columbia Occupancy']
