@@ -31,3 +31,4 @@ plot_t = plots.T
 
 st.line_chart(plot_t)
 st.write(plot_t)
+st.text('Colo Occupancy vs. Time')
