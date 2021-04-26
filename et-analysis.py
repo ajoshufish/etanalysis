@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+pd.options.plotting.backend = "plotly"
 import gspread
 import os
 
@@ -23,12 +24,13 @@ headers = data.pop(0)
 df = pd.DataFrame(data, columns=headers)
 
 
-col1 = df['Time']
-col2 = df['Columbia Occupancy']
-combo = [col1,col2]
-plots = pd.DataFrame(combo)
-plot_t = plots.T
+#snag Columbia data and display
+coloData = pd.DataFrame([df['DateTime'],df['Columbia Occupancy'], df['Columbia Capacity']]).T
+coloFig = coloData.plot(title="Columbia Occupancy Over Time", x="DateTime", y=["Columbia Occupancy",'Columbia Capacity'], template="simple_white", labels={"DateTime": "Date",'variable':'Values'})
+coloFig.update_layout(hovermode='y unified')
+st.plotly_chart(coloFig)
 
-st.line_chart(plot_t)
-st.write(plot_t)
-st.text('Colo Occupancy vs. Time')
+#st.line_chart(plot_t)
+if st.checkbox('Show Data'):
+    st.write(coloData)
+
