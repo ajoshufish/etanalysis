@@ -5,6 +5,7 @@ import calendar
 import pandas as pd
 import gspread
 import gspread_dataframe as gd
+import os
 
 #snag the page we want to parse
 page = requests.get('https://portal.rockgympro.com/portal/public/dd60512aa081d8b38fff4ddbbd364a54/occupancy?&iframeid=occupancyCounter&fId=1160')
@@ -64,7 +65,9 @@ def next_available_row(worksheet):
     return len(str_list)+1
 
 #let's connect to the google sheet. what's our auth info, and then what sheet and specific worksheet do we want?
-gc = gspread.service_account(filename='/Users/joshu/Documents/python projs/etdataaccess.json')
+filefold = os.path.dirname(os.path.abspath(__file__))
+authpath = os.path.join(filefold, 'etdataaccess.json')
+gc = gspread.service_account(authpath)
 ws = gc.open_by_key("1pAzzV_ywejUJKWkkrPSdHfssMp3qcCEbmyK6XiZfxTQ").worksheet('Data')
 
 #for that sheet, where do we want our data to be inserted?

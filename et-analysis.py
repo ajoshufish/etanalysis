@@ -1,12 +1,15 @@
 import streamlit as st
 import pandas as pd
 import gspread
+import os
 
 st.title('Earth Treks Occupancy Analysis')
 
 @st.cache(allow_output_mutation=True)
 def load_data():
-    gc = gspread.service_account(filename='/Users/joshu/Documents/python projs/ET_Analysis/etanalysis/etetdataaccess.json')
+    filefold = os.path.dirname(os.path.abspath(__file__))
+    authpath = os.path.join(filefold, 'etdataaccess.json')
+    gc = gspread.service_account(authpath)
     ws = gc.open_by_key("1pAzzV_ywejUJKWkkrPSdHfssMp3qcCEbmyK6XiZfxTQ").worksheet('Data')
     return ws.get_all_records()
 
