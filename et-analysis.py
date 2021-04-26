@@ -5,6 +5,7 @@ import os
 
 st.title('Earth Treks Occupancy Analysis')
 
+#cache our data pulling
 @st.cache(allow_output_mutation=True)
 def load_data():
     filefold = os.path.dirname(os.path.abspath(__file__))
