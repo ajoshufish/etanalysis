@@ -8,4 +8,4 @@ Thus, this project. We pull in the data that Earth Treks publishes to the web so
 
 Ingest:  Python script snagging the information --> Pandas --> GSpread Dataframe --> Google Sheet
 
-Analysis: Google Sheet --> GSpread --> Pandas --> Streamlit
+Analysis: Google Sheet --> GSpread --> Pandas --> Plotly --> Streamlit
