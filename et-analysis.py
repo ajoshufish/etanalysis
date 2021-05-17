@@ -56,6 +56,8 @@ st.sidebar.text('Filter the data?')
 filtDays = st.sidebar.multiselect('Day of the week?', ('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'))
 filtTime1, filtTime2 = st.sidebar.slider('Time of day?', min_value=time(6,00), max_value=time(23,00), value=(time(10,00), time(20,00)))
 
+st.sidebar.write(time(5,30))
+
 #filter our data
 opts = 'Day =='
 filt = gymData
