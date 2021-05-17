@@ -54,7 +54,7 @@ gymData['Date'] = gymData['DateTime'].dt.strftime('%b %e')
 #Get options
 st.sidebar.text('Filter the data?')
 filtDays = st.sidebar.multiselect('Day of the week?', ('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'))
-filtTime1, filtTime2 = st.sidebar.slider('Time of day?', min_value=time(6,0), max_value=time(22,00), value=(time(10,00), time(20,00)))
+filtTime1, filtTime2 = st.sidebar.slider('Time of day?', min_value=time(6,00), max_value=time(22,00), value=(time(10,00), time(20,00)))
 
 #filter our data
 opts = 'Day =='
