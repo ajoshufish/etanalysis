@@ -58,7 +58,7 @@ maxTime = time(23,00)
 defMin = time(10,00)
 defMax = time(20,00)
 
-filtTime1, filtTime2 = st.sidebar.slider('Time of day?', min_value=minTime, max_value=maxTime, value=(defMin, defMax), format="LT")
+filtTime1, filtTime2 = st.slider('Time of day?', min_value=minTime, max_value=maxTime, value=(defMin, defMax), format="LT")
 
 st.sidebar.write(filtTime1)
 st.sidebar.write(filtTime2)
