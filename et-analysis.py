@@ -53,15 +53,14 @@ gymData['Date'] = gymData['DateTime'].dt.strftime('%b %e')
 #Get options
 st.sidebar.text('Filter the data?')
 filtDays = st.sidebar.multiselect('Day of the week?', ('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'))
+
 minTime = time(6,00)
 maxTime = time(23,00)
-defMin = time(10,00)
-defMax = time(20,00)
+defaultMin = time(10,00)
+defaultMax = time(20,00)
 
-filtTime1, filtTime2 = st.slider('Time of day?', min_value=minTime, max_value=maxTime, value=(defMin, defMax), format="LT")
+time1, time2 = st.sidebar.slider('Time of day?', min_value=minTime, max_value=maxTime, value=(defaultMin, defaultMax), format="LT")
 
-st.sidebar.write(filtTime1)
-st.sidebar.write(filtTime2)
 #filter our data
 opts = 'Day =='
 filt = gymData
@@ -72,8 +71,8 @@ if(len(filtDays) > 0):
             opts = opts + " or Day == "
 
     filt = filt.query(opts)
-filt = filt[filt.CTime >= filtTime1]
-filt = filt[filt.CTime <= filtTime2]
+filt = filt[filt.CTime >= time1]
+filt = filt[filt.CTime <= time2]
 
 #plot it
 st.text("What's been going on at "+ gym+ ' ?')
