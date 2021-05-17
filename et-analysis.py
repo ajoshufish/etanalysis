@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 pd.options.plotting.backend = "plotly"
 import gspread
-import os
 import plotly.graph_objects as go 
 st.set_page_config(layout='wide')
 from datetime import datetime
@@ -56,7 +55,8 @@ st.sidebar.text('Filter the data?')
 filtDays = st.sidebar.multiselect('Day of the week?', ('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'))
 filtTime1, filtTime2 = st.sidebar.slider('Time of day?', min_value=time(6,00), max_value=time(23,00), value=(time(10,00), time(20,00)))
 
-
+tester = st.sidebar.slider('working?', min_value=time(6,00), max_value=time(23,00), value=time(13,00))
+st.sidebar.write(tester)
 #filter our data
 opts = 'Day =='
 filt = gymData
