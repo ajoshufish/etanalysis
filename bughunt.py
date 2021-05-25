@@ -12,4 +12,5 @@ defaultMax = time(20,00)
 # maxTime = 23
 # defaultMin = 10
 # defaultMax = 20
-st.slider('Time of day?', min_value=minTime, max_value=maxTime, value=(defaultMin, defaultMax))
+st.slider('Start of time range?', min_value=minTime, max_value=maxTime, value=defaultMin)
+st.slider('End of time range?', min_value=minTime, max_value=maxTime, value=defaultMax)
