@@ -8,6 +8,9 @@ from datetime import time
 
 st.title('Earth Treks Occupancy Analysis')
 
+if st.checkbox('Show Description'):
+    st.text('The COVID-19 pandemic dramatically changed the way climbers interface with their local climbing gyms. \nReservation systems, masks, and capacity limits have all been standard. In order to make informed decisions \nabout when is a good time to go to the gym (that is to say, when it\'s not totally full of other people),\nI put together this tool. We pull their data here and there throughout the main hours the local gyms are open\nand feed it into this tool by bouncing it off a Google Sheet.')
+
 # setup credentials
 credentials = {
   "type": st.secrets["type"],
@@ -146,6 +149,6 @@ fig.update_xaxes(rangeslider_visible=True, rangebreaks=[dict(values=dt_breaks)])
 st.plotly_chart(fig , use_container_width=True)
 
 # show raw data
-if st.checkbox('Show Data'):
-    st.write(filt)
+#if st.checkbox('Show Data'):
+#    st.write(filt)
 
