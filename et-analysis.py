@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-pd.options.plotting.backend = "plotly"
 import gspread
 import plotly.graph_objects as go 
 st.set_page_config(layout='wide')
@@ -9,7 +8,7 @@ from datetime import time
 
 st.title('Earth Treks Occupancy Analysis')
 
-#setup credentials
+# setup credentials
 credentials = {
   "type": st.secrets["type"],
   "project_id": st.secrets["project_id"],
@@ -25,7 +24,7 @@ credentials = {
 sheetKey = st.secrets["worksheet_key"]
 dbSheet = st.secrets["sheet"]
 
-#Load up all our data
+# Load up all our data
 @st.cache(allow_output_mutation=True)
 def load_dataset():
    gc = gspread.service_account_from_dict(credentials)
@@ -33,13 +32,14 @@ def load_dataset():
    return ws.get_all_records()
 
 
-#get our data loaded in and into a pandas dataframe
+# get our data loaded in and into a pandas dataframe
 data = load_dataset()
 headers = data.pop(0)
 df = pd.DataFrame(data, columns=headers)
 
-#choose location and setup localized data
+# setup starting location data
 gym = st.sidebar.selectbox('Which gym should we look at?', ['Columbia', 'Hampden', 'Timonium', 'Crystal City', 'Rockville'])
+
 gymOcc = gym + ' Occupancy'
 gymCap = gym + ' Capacity'
 gymData = pd.DataFrame([df['DateTime'],df[gymOcc], df[gymCap], df['Day']]).T
@@ -49,19 +49,25 @@ gymData['CTime'] = gymData['DateTime'].dt.time
 gymData['ShDay'] = gymData['DateTime'].dt.strftime('%a')
 gymData['Date'] = gymData['DateTime'].dt.strftime('%b %e')
 
+# Get options   
+with st.sidebar:
+    with st.form(key='opts_form'):
+        st.text('Select options for filtering:')
+        filtDays = st.multiselect('Day of the week? (default: all)', ('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'))
 
-#Get options
-st.sidebar.text('Filter the data?')
-filtDays = st.sidebar.multiselect('Day of the week?', ('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'))
+        # deployed streamlit's datetime range slider is bugged, so we hack together a working solution by passing it through a string
+        # first we generate a bunch of datetimes using pandas, then turn them into strings, format them, use them as string options, 
+        # then convert them back to a time datatype that we can use in future datetime comparisons. The gyms don't open before 6a or 
+        # stay open after 11, so those are out limiters on the range, set in this first line.
+        bundletimes = pd.date_range('6:00', '23:00', freq='10 min')
+        bundletimes = [datetime.strftime(a, '%l:%M %p').split(' ', 1)[1] if datetime.strftime(a, '%l:%M %p')[0]==' ' else datetime.strftime(a, '%l:%M %p') for a in bundletimes]
+        time1, time2 = st.select_slider('Time of day?', options=bundletimes, value=('7:00 AM', '1:00 PM'))
+        time1 = datetime.strptime(time1, '%I:%M %p').time()
+        time2 = datetime.strptime(time2, '%I:%M %p').time()
+        
+        submit_button = st.form_submit_button(label='Submit')
 
-minTime = time(6,00)
-maxTime = time(23,00)
-defaultMin = time(10,00)
-defaultMax = time(20,00)
-
-time1, time2 = st.sidebar.slider('Time of day?', min_value=minTime, max_value=maxTime, value=(defaultMin, defaultMax), format="LT")
-
-#filter our data
+# apply our options to filter our data
 opts = 'Day =='
 filt = gymData
 if(len(filtDays) > 0):
@@ -74,6 +80,8 @@ if(len(filtDays) > 0):
 filt = filt[filt.CTime >= time1]
 filt = filt[filt.CTime <= time2]
 
+# ugly way to handle this, building a df from scratch with each gym's weekly hours. 
+# this could be improved by scraping from the website perhaps
 gymTimeHead = ['Gym', 'WeekOpen', 'WeekClose', 'SatOpen', 'SatClose', 'SunOpen', 'SunClose']
 timTime = ['Timonium', time(16,00), time(22,00), time(9,00), time(16,00), time(9,00), time(16,00)]
 coloTime = ['Columbia', time(6,00), time(23,00), time(8,00), time(20,00), time(8,00), time(18,00)]
@@ -83,14 +91,16 @@ cryTime = ['Crystal City', time(6,00), time(23,00), time(8,00), time(20,00), tim
 gymTime = pd.DataFrame(list(zip(timTime, coloTime, rocTime, hamTime, cryTime))).T
 gymTime.columns = gymTimeHead
 
-#programmatically find days we didn't collect data so we can filter them out on a plotting level
+# programmatically find days we didn't collect data so we can filter them out on a plotting level
 dt_all = pd.date_range(start=filt['DateTime'].iloc[0], end=filt['DateTime'].iloc[-1], freq='H')
 dt_obs = [d.strftime('%Y-%m-%d') for d in filt['DateTime']]
 dt_breaks = [d for d in dt_all.strftime('%Y-%m-%d').tolist() if not d in dt_obs]
 
 dt_breaks = list(dict.fromkeys(dt_breaks))
 
-#track down times when the gym isn't open and throw those out of the plot? not working
+# track down times when the gym isn't open and throw those out of the plot? not working -- we're getting
+# weird plotly behavior in that case.
+#
 # dt_late = [d for d in dt_all if (d.time() > gymTime.loc[gymTime.Gym == gym, 'WeekClose'][1]) 
 #     and (d.weekday() < 5)
 #     | (d.time() > gymTime.loc[gymTime.Gym == gym, 'SatClose'][1]) 
@@ -117,7 +127,7 @@ dt_breaks = list(dict.fromkeys(dt_breaks))
 # dt_breaks.extend(dt_early)
 # dt_breaks.extend(dt_late)
 
-#plot it
+# plot it
 st.text("What's been going on at "+ gym+ ' ?')
 colorhelp = 'rgba(0,0,0,0)'
 fig = go.Figure()
@@ -135,7 +145,7 @@ fig.update_layout(xaxis_title='Date', yaxis_title='Occupancy',
 fig.update_xaxes(rangeslider_visible=True, rangebreaks=[dict(values=dt_breaks)])
 st.plotly_chart(fig , use_container_width=True)
 
-#debug/raw data
+# show raw data
 if st.checkbox('Show Data'):
     st.write(filt)
 
