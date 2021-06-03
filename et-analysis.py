@@ -36,20 +36,10 @@ def load_dataset():
    ws = gc.open_by_key(sheetKey).worksheet(dbSheet)
    return ws.get_all_records()
 
-# ride the struggle bus a bit with the streamlit caching and try this to manually repull
-def refresh_dataset():
-   gc = gspread.service_account_from_dict(credentials)
-   ws = gc.open_by_key(sheetKey).worksheet(dbSheet)
-   return ws.get_all_records()
-
-
 # get our data loaded in and into a pandas dataframe
 data = load_dataset()
 headers = data.pop(0)
-with st.sidebar:
-    with st.beta_expander('Refresh'):
-        st.text('Just in case it has been a while\nsince we updated the data...')
-        if st.button('Update Data'): data = refresh_dataset()
+
 
 df = pd.DataFrame(data, columns=headers, copy=True)
 
@@ -111,35 +101,6 @@ dt_all = pd.date_range(start=filt['DateTime'].iloc[0], end=filt['DateTime'].iloc
 dt_obs = [d.strftime('%Y-%m-%d') for d in filt['DateTime']]
 dt_breaks = [d for d in dt_all.strftime('%Y-%m-%d').tolist() if not d in dt_obs]
 dt_breaks = list(dict.fromkeys(dt_breaks))
-
-# track down times when the gym isn't open and throw those out of the plot? not working -- we're getting
-# weird plotly behavior in that case.
-#
-# dt_late = [d for d in dt_all if (d.time() > gymTime.loc[gymTime.Gym == gym, 'WeekClose'][1]) 
-#     and (d.weekday() < 5)
-#     | (d.time() > gymTime.loc[gymTime.Gym == gym, 'SatClose'][1]) 
-#         and (d.weekday() == 5)
-# ]
-# dt_late =[]
-# for d in dt_all:
-#     if (d.time() > gymTime.loc[gymTime.Gym == gym, 'WeekClose'][1]) and (d.weekday() < 5):
-#         dt_late.append(d)
-#     elif (d.time() > gymTime.loc[gymTime.Gym == gym, 'SatClose'][1]) and (d.weekday() == 5):
-#         dt_late.append(d)
-#     elif (d.time() > gymTime.loc[gymTime.Gym == gym, 'SunClose'][1]) and (d.weekday() == 6):
-#         dt_late.append(d)
-
-# dt_early =[]
-# for d in dt_all:
-#     if (d.time() < gymTime.loc[gymTime.Gym == gym, 'WeekOpen'][1]) and (d.weekday() < 5):
-#         dt_early.append(d)
-#     elif (d.time() < gymTime.loc[gymTime.Gym == gym, 'SatOpen'][1]) and (d.weekday() == 5):
-#         dt_early.append(d)
-#     elif (d.time() < gymTime.loc[gymTime.Gym == gym, 'SunOpen'][1]) and (d.weekday() == 6):
-#         dt_early.append(d)
-
-# dt_breaks.extend(dt_early)
-# dt_breaks.extend(dt_late)
 
 # plot it
 st.text("What's been going on at "+ gym+ ' ?')
