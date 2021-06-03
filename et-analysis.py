@@ -6,11 +6,12 @@ st.set_page_config(layout='wide')
 from datetime import datetime
 from datetime import timedelta as td
 from datetime import time
+import pytz as tz
 
 st.title('Earth Treks Occupancy Analysis')
 
 if st.checkbox('Show Description'):
-    st.text('The COVID-19 pandemic dramatically changed the way climbers interface with their local climbing gyms. \nReservation systems, masks, and capacity limits have all been standard. In order to make informed decisions \nabout when is a good time to go to the gym (that is to say, when it\'s not totally full of other people),\nI put together this tool. We pull their data here and there throughout the main hours the local gyms are open\nand feed it into this tool by bouncing it off a Google Sheet.')
+    st.info('The COVID-19 pandemic dramatically changed the way climbers interface with their local climbing gyms. \nReservation systems, masks, and capacity limits have all been standard. In order to make informed decisions \nabout when is a good time to go to the gym (that is to say, when it\'s not totally full of other people),\nI put together this tool. We pull their data here and there throughout the main hours the local gyms are open\nand feed it into this tool by bouncing it off a Google Sheet.')
 
 # setup credentials
 credentials = {
@@ -29,8 +30,8 @@ sheetKey = st.secrets["worksheet_key"]
 dbSheet = st.secrets["sheet"]
 
 # Load up all our data
-@st.cache(allow_output_mutation=True)
-def load_dataset(ttl=20):
+@st.cache(ttl=1100, allow_output_mutation=True)
+def load_dataset():
    gc = gspread.service_account_from_dict(credentials)
    ws = gc.open_by_key(sheetKey).worksheet(dbSheet)
    return ws.get_all_records()
@@ -46,8 +47,9 @@ def refresh_dataset():
 data = load_dataset()
 headers = data.pop(0)
 with st.sidebar:
-    st.text('Just in case it has been a while\nsince we updated the data...')
-    if st.button('Update Data'): data = refresh_dataset()
+    with st.beta_expander('Refresh'):
+        st.text('Just in case it has been a while\nsince we updated the data...')
+        if st.button('Update Data'): data = refresh_dataset()
 
 df = pd.DataFrame(data, columns=headers, copy=True)
 
@@ -176,10 +178,12 @@ with col1:
 with col2:
     st.write('Capacity: ' + str(filt[gymCap][filt.index[-1]]))
     st.write('Current Occupancy: '+ str(filt[gymOcc][filt.index[-1]]))
-    st.write('The time now is about ' + datetime.now().time().strftime('%l:%M %p') + ' on a ' +datetime.now().strftime('%A'))
+    
+    # make sure we localize all these to ET timezone
+    st.write('The time now is about ' + datetime.now(tz.timezone('America/New_York')).time().strftime('%l:%M %p') + ' on a ' +datetime.now(tz.timezone('America/New_York')).strftime('%A'))
     
     # we look 40 minutes in either direction from now and then average the occupancy numbers in that time on this day
-    lowEnd = (datetime.now() - td(minutes=40)).time()
-    highEnd = (datetime.now() + td(minutes=40)).time()
-    timeBand = gymData[(gymData['CTime'] >= lowEnd) & (gymData['ShDay'] == datetime.now().strftime('%a')) & (gymData['CTime'] <= highEnd)]
+    lowEnd = (datetime.now(tz.timezone('America/New_York')) - td(minutes=40)).time()
+    highEnd = (datetime.now(tz.timezone('America/New_York')) + td(minutes=40)).time()
+    timeBand = gymData[(gymData['CTime'] >= lowEnd) & (gymData['ShDay'] == datetime.now(tz.timezone('America/New_York')).strftime('%a')) & (gymData['CTime'] <= highEnd)]
     st.write('Typically, near this time/day the gym has about ' + str(timeBand[gym + ' Occupancy'].mean().astype(int)) + ' people')
