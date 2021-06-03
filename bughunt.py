@@ -1,3 +1,6 @@
+# For some reason when we deploy the app to Streamlit Sharing, their hosted version of a date range slider seems to be bugged.
+# This was a quick demo to see at what point the breakdown was occurring. 
+
 import streamlit as st
 from datetime import time
 from datetime import datetime as dt

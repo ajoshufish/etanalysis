@@ -4,6 +4,7 @@ import gspread
 import plotly.graph_objects as go 
 st.set_page_config(layout='wide')
 from datetime import datetime
+from datetime import timedelta as td
 from datetime import time
 
 st.title('Earth Treks Occupancy Analysis')
@@ -29,7 +30,13 @@ dbSheet = st.secrets["sheet"]
 
 # Load up all our data
 @st.cache(allow_output_mutation=True)
-def load_dataset():
+def load_dataset(ttl=20):
+   gc = gspread.service_account_from_dict(credentials)
+   ws = gc.open_by_key(sheetKey).worksheet(dbSheet)
+   return ws.get_all_records()
+
+# ride the struggle bus a bit with the streamlit caching and try this to manually repull
+def refresh_dataset():
    gc = gspread.service_account_from_dict(credentials)
    ws = gc.open_by_key(sheetKey).worksheet(dbSheet)
    return ws.get_all_records()
@@ -38,11 +45,14 @@ def load_dataset():
 # get our data loaded in and into a pandas dataframe
 data = load_dataset()
 headers = data.pop(0)
-df = pd.DataFrame(data, columns=headers)
+with st.sidebar:
+    st.text('Just in case it has been a while\nsince we updated the data...')
+    if st.button('Update Data'): data = refresh_dataset()
+
+df = pd.DataFrame(data, columns=headers, copy=True)
 
 # setup starting location data
 gym = st.sidebar.selectbox('Which gym should we look at?', ['Columbia', 'Hampden', 'Timonium', 'Crystal City', 'Rockville'])
-
 gymOcc = gym + ' Occupancy'
 gymCap = gym + ' Capacity'
 gymData = pd.DataFrame([df['DateTime'],df[gymOcc], df[gymCap], df['Day']]).T
@@ -69,16 +79,16 @@ with st.sidebar:
         time2 = datetime.strptime(time2, '%I:%M %p').time()
         
         submit_button = st.form_submit_button(label='Submit')
+    
 
 # apply our options to filter our data
 opts = 'Day =='
-filt = gymData
+filt = gymData.copy()
 if(len(filtDays) > 0):
     for index, items in enumerate(filtDays):
         opts = opts + '"'+filtDays[index]+'"'
         if (len(filtDays) - index -1> 0):
             opts = opts + " or Day == "
-
     filt = filt.query(opts)
 filt = filt[filt.CTime >= time1]
 filt = filt[filt.CTime <= time2]
@@ -98,7 +108,6 @@ gymTime.columns = gymTimeHead
 dt_all = pd.date_range(start=filt['DateTime'].iloc[0], end=filt['DateTime'].iloc[-1], freq='H')
 dt_obs = [d.strftime('%Y-%m-%d') for d in filt['DateTime']]
 dt_breaks = [d for d in dt_all.strftime('%Y-%m-%d').tolist() if not d in dt_obs]
-
 dt_breaks = list(dict.fromkeys(dt_breaks))
 
 # track down times when the gym isn't open and throw those out of the plot? not working -- we're getting
@@ -152,3 +161,25 @@ st.plotly_chart(fig , use_container_width=True)
 #if st.checkbox('Show Data'):
 #    st.write(filt)
 
+# here we pull out some data on the gym in question, such as hours of operation
+# and what things typically look like at this time.
+st.title('Selected Gym Info: ' +gym)
+col1, col2 = st.beta_columns(2)
+
+with col1:
+    st.write('Weekday Open: ' + gymTime.loc[gymTime.Gym == gym]['WeekOpen'].values[0].strftime('%l:%M %p'))
+    st.write('Weekday Close: ' + gymTime.loc[gymTime.Gym == gym]['WeekClose'].values[0].strftime('%l:%M %p'))
+    st.write('Saturday Open: ' + gymTime.loc[gymTime.Gym == gym]['SatOpen'].values[0].strftime('%l:%M %p'))
+    st.write('Saturday Close: ' + gymTime.loc[gymTime.Gym == gym]['SatClose'].values[0].strftime('%l:%M %p'))
+    st.write('Sunday Open: ' + gymTime.loc[gymTime.Gym == gym]['SunOpen'].values[0].strftime('%l:%M %p'))
+    st.write('Sunday Close: ' + gymTime.loc[gymTime.Gym == gym]['SunClose'].values[0].strftime('%l:%M %p'))
+with col2:
+    st.write('Capacity: ' + str(filt[gymCap][filt.index[-1]]))
+    st.write('Current Occupancy: '+ str(filt[gymOcc][filt.index[-1]]))
+    st.write('The time now is about ' + datetime.now().time().strftime('%l:%M %p') + ' on a ' +datetime.now().strftime('%A'))
+    
+    # we look 40 minutes in either direction from now and then average the occupancy numbers in that time on this day
+    lowEnd = (datetime.now() - td(minutes=40)).time()
+    highEnd = (datetime.now() + td(minutes=40)).time()
+    timeBand = gymData[(gymData['CTime'] >= lowEnd) & (gymData['ShDay'] == datetime.now().strftime('%a')) & (gymData['CTime'] <= highEnd)]
+    st.write('Typically, near this time/day the gym has about ' + str(timeBand[gym + ' Occupancy'].mean().astype(int)) + ' people')
